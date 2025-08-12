@@ -6,6 +6,7 @@ import GameScene from "./GameScene";
 import GameState from "./GameState";
 import Renderer from "./Renderer";
 import SettingsManager from "./SettingsManager";
+import HoneycombService from "./HoneycombService";
 
 export default class Game {
   private static _instance: Game;
@@ -22,6 +23,7 @@ export default class Game {
   private dataManager: DataManager;
   private audioSystem: AudioSystem;
   private settingsManager: SettingsManager;
+  private honeycombService: HoneycombService;
 
   static instance(): Game {
     if (!Game._instance) {
@@ -48,6 +50,7 @@ export default class Game {
     this.dataManager = new DataManager();
     this.settingsManager = new SettingsManager(this.dataManager);
     this.audioSystem = new AudioSystem(this.scene.getCamera());
+    this.honeycombService = HoneycombService.init();
   }
 
   getState() {
@@ -76,5 +79,9 @@ export default class Game {
 
   getAudioSystem() {
     return this.audioSystem;
+  }
+
+  getHoneycombService() {
+    return this.honeycombService;
   }
 }

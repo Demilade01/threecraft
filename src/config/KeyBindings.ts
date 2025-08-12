@@ -2,6 +2,7 @@ export default class KeyBindings {
   /** UI Controls */
   static readonly TOGGLE_DEBUG_INFO_KEY = "F3";
   static readonly TOGGLE_INVENTORY_KEY = "KeyT";
+  static readonly TOGGLE_MISSION_PANEL_KEY = "KeyM";
 
   /** Player Controls */
   static readonly SWITCH_PLAYER_PHYSICS_MODE = "KeyP";

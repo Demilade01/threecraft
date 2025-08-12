@@ -70,6 +70,10 @@ export default class EditingControls {
         // sound effect
         this.digSoundEffect.playBlockDestroySound(erasedBlock);
 
+        // Track block breaking for Honeycomb
+        const honeycombService = Game.instance().getHoneycombService();
+        honeycombService.trackBlockBreak(erasedBlock.name.toUpperCase());
+
         // if it drops something, add it to the inventory
         if (erasedBlock.drop) {
           this.inventory.addItem({
@@ -93,6 +97,10 @@ export default class EditingControls {
 
           // sound effect
           this.digSoundEffect.playBlockPlacementSound(blockData);
+
+          // Track block placing for Honeycomb
+          const honeycombService = Game.instance().getHoneycombService();
+          honeycombService.trackBlockPlace(blockData.name.toUpperCase());
 
           // decrement item amount
           this.inventory.decrementSelectedItemAmount();
