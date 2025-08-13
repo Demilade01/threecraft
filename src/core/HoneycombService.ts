@@ -569,8 +569,258 @@ export default class HoneycombService {
     console.log(`🏆 Mission completed: ${mission.title} - XP gained: ${mission.rewards.find(r => r.type === 'xp')?.value || 0}`);
     Logger.info(`Mission completed: ${mission.title}`, Logger.PLAYER_KEY);
 
+    // Show mission completion notification
+    this.showMissionCompletionNotification(mission);
+
+    // Check if all missions are completed
+    this.checkAllMissionsCompleted();
+
     // Save to Honeycomb
     await this.savePlayerData();
+  }
+
+  // Show notification for individual mission completion
+  private showMissionCompletionNotification(mission: Mission): void {
+    const notification = document.createElement('div');
+    notification.id = `mission-notification-${Date.now()}`;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 300px;
+      background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(76, 175, 80, 0.85));
+      color: #ffffff;
+      border: 2px solid #4caf50;
+      border-radius: 12px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(76, 175, 80, 0.3);
+      backdrop-filter: blur(10px);
+      animation: notificationSlideIn 0.4s ease-out;
+      transform: translateX(100%);
+    `;
+
+    const xpReward = (mission.rewards.find(r => r.type === 'xp')?.value as number) || 0;
+    const nectarReward = (mission.rewards.find(r => r.type === 'nectar')?.value as number) || 0;
+
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 20px; margin-right: 8px;">✅</span>
+        <div style="font-weight: bold; font-size: 14px;">Mission Completed!</div>
+      </div>
+      <div style="font-size: 13px; margin-bottom: 10px; color: #e8f5e8;">
+        <strong>${mission.title}</strong>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        ${xpReward > 0 ? `<span style="padding: 4px 8px; background: rgba(255, 193, 7, 0.2); border-radius: 6px; font-size: 11px; color: #ffc107;">⭐ +${xpReward} XP</span>` : ''}
+        ${nectarReward > 0 ? `<span style="padding: 4px 8px; background: rgba(255, 193, 7, 0.2); border-radius: 6px; font-size: 11px; color: #ffc107;">🍯 +${nectarReward} Nectar</span>` : ''}
+        ${mission.rewards.some(r => r.type === 'trait') ? `<span style="padding: 4px 8px; background: rgba(255, 215, 0, 0.2); border-radius: 6px; font-size: 11px; color: #ffd700;">⚡ Trait Boost</span>` : ''}
+        ${mission.rewards.some(r => r.type === 'resource') ? `<span style="padding: 4px 8px; background: rgba(156, 39, 176, 0.2); border-radius: 6px; font-size: 11px; color: #9c27b0;">💎 Resource</span>` : ''}
+      </div>
+      <style>
+        @keyframes notificationSlideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      </style>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            notification.remove();
+          }
+        }, 400);
+      }
+    }, 4000);
+  }
+
+  // Check if all missions are completed and trigger celebration
+  private checkAllMissionsCompleted(): void {
+    const allMissions = Array.from(this.activeMissions.values());
+    const completedCount = allMissions.filter(mission => mission.completed).length;
+    const totalMissions = allMissions.length;
+
+    if (completedCount === totalMissions && totalMissions > 0) {
+      console.log(`🎉🎉🎉 ALL MISSIONS COMPLETED! 🎉🎉🎉`);
+      this.showAllMissionsCompletedCelebration();
+    }
+  }
+
+  // Show celebration popup for all missions completed
+  private showAllMissionsCompletedCelebration(): void {
+    const popup = document.createElement('div');
+    popup.id = 'all-missions-celebration';
+    popup.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      max-width: 90vw;
+      background: linear-gradient(135deg, rgba(20, 20, 30, 0.98), rgba(30, 30, 50, 0.98));
+      color: #ffffff;
+      border: 3px solid #ffd700;
+      border-radius: 20px;
+      padding: 30px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      z-index: 10000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      animation: celebrationSlideIn 0.5s ease-out;
+    `;
+
+    const playerIdentity = this.getPlayerIdentity();
+    const totalXP = playerIdentity?.experience || 0;
+    const totalNectar = playerIdentity?.nectarBalance || 0;
+    const level = playerIdentity?.level || 1;
+
+    popup.innerHTML = `
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 48px; margin-bottom: 10px;">🎉🏆🎉</div>
+        <h2 style="margin: 0 0 10px 0; color: #ffd700; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+          ALL MISSIONS COMPLETED!
+        </h2>
+        <p style="margin: 0; color: #b0b0b0; font-size: 16px;">
+          Congratulations! You've mastered the art of building in ThreeCraft!
+        </p>
+      </div>
+
+      <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05)); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px;">
+        <h3 style="margin: 0 0 15px 0; color: #ffd700; font-size: 20px;">🏆 Final Achievement Summary</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+          <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
+            <div style="color: #ffc107; font-weight: bold; margin-bottom: 5px;">⭐ Total XP Earned</div>
+            <div style="color: #ffffff; font-size: 18px; font-weight: bold;">${totalXP}</div>
+          </div>
+          <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
+            <div style="color: #ffc107; font-weight: bold; margin-bottom: 5px;">🍯 Nectar Balance</div>
+            <div style="color: #ffffff; font-size: 18px; font-weight: bold;">${totalNectar}</div>
+          </div>
+          <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
+            <div style="color: #ffc107; font-weight: bold; margin-bottom: 5px;">📈 Current Level</div>
+            <div style="color: #ffffff; font-size: 18px; font-weight: bold;">${level}</div>
+          </div>
+          <div style="padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px;">
+            <div style="color: #ffc107; font-weight: bold; margin-bottom: 5px;">✅ Missions Completed</div>
+            <div style="color: #ffffff; font-size: 18px; font-weight: bold;">5/5</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <h3 style="margin: 0 0 15px 0; color: #4a90e2; font-size: 18px;">🎯 Your Master Builder Status</h3>
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+          <span style="padding: 8px 16px; background: linear-gradient(135deg, #4a90e2, #357abd); border-radius: 20px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);">
+            🏗️ Master Builder
+          </span>
+          <span style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0, #7b1fa2); border-radius: 20px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);">
+            💎 Resource Collector
+          </span>
+          <span style="padding: 8px 16px; background: linear-gradient(135deg, #ff9800, #f57c00); border-radius: 20px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);">
+            🍯 Nectar Farmer
+          </span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 25px; padding: 15px; background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05)); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 12px;">
+        <h3 style="margin: 0 0 10px 0; color: #4caf50; font-size: 16px;">🚀 What's Next?</h3>
+        <p style="margin: 0; color: #b0b0b0; font-size: 14px; line-height: 1.4;">
+          Your achievements are now permanently stored on the Solana blockchain!
+          Your traits and progress can be used across multiple games in the Honeycomb ecosystem.
+        </p>
+      </div>
+
+      <button id="close-celebration" style="
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        transition: all 0.2s ease;
+      ">Continue Building! 🏗️</button>
+
+      <style>
+        @keyframes celebrationSlideIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
+        #close-celebration:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+        }
+      </style>
+    `;
+
+    document.body.appendChild(popup);
+
+    // Add event listener to close button
+    const closeButton = popup.querySelector('#close-celebration');
+    if (closeButton) {
+      closeButton.addEventListener('click', () => {
+        popup.remove();
+      });
+    }
+
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+      if (document.body.contains(popup)) {
+        popup.remove();
+      }
+    }, 10000);
+
+    // Emit event for other components to listen to
+    this.emitEvent('allMissionsCompleted', {
+      totalXP,
+      totalNectar,
+      level,
+      completedMissions: Array.from(this.completedMissions)
+    });
+  }
+
+  // Public method to check if all missions are completed
+  areAllMissionsCompleted(): boolean {
+    const allMissions = Array.from(this.activeMissions.values());
+    return allMissions.length > 0 && allMissions.every(mission => mission.completed);
+  }
+
+  // Public method to get completion statistics
+  getCompletionStats(): { completed: number; total: number; percentage: number } {
+    const allMissions = Array.from(this.activeMissions.values());
+    const completed = allMissions.filter(mission => mission.completed).length;
+    const total = allMissions.length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return { completed, total, percentage };
   }
 
   // Experience and Leveling Methods

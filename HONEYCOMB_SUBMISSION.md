@@ -23,6 +23,9 @@
 - **Real-time Progress Tracking**: Block placement/breaking automatically updates mission progress
 - **On-chain Mission Data**: All mission completion data stored on Solana
 - **Dynamic Rewards**: XP, Nectar currency, traits, and resources
+- **Mission Completion Notifications**: Real-time popup notifications for completed missions
+- **All Missions Celebration**: Special celebration popup when all missions are completed
+- **Progress Visualization**: Visual progress bars and completion statistics
 
 ### 2. **Trait Assignment/Evolution** ✅
 - **4 Player Traits**:
@@ -167,6 +170,8 @@ ThreeCraft/
 - Show trait assignment (Builder trait)
 - Display Nectar currency rewards
 - Complete another mission to show resource rewards
+- Show mission completion notifications
+- Complete all missions to trigger the celebration popup
 
 ### 2:00-3:00 - Advanced Features
 - Show the resource collection system
