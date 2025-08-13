@@ -2,6 +2,8 @@
 
 This is a Minecraft clone built using Three.js and TypeScript. It is a 3D sandbox game where players can explore, build, and destroy their own world made up of blocks.
 
+🎬 **[Watch the Video Walkthrough](https://streamable.com/erzhin)** - See the game in action with Honeycomb Protocol integration!
+
 You can play a demo [here](threecraft-steel.vercel.app/).
 
 **Important**: It is suggested to play the game with Chrome, since it was developed and tested only it.
@@ -65,6 +67,15 @@ Here are some important tasks and features that i'd like to implement in the fut
 ## 🏗️ Honeycomb Protocol Integration
 
 ThreeCraft now features **complete blockchain integration** using Honeycomb Protocol for on-chain progression, missions, character management, and resource trading!
+
+### 🎬 Video Walkthrough
+
+**[Watch the complete demo](https://streamable.com/erzhin)** - See all Honeycomb Protocol features in action:
+- Real wallet connection and devnet integration
+- Building missions with on-chain progress tracking
+- XP and trait progression system
+- Resource collection and trading
+- Character evolution and NFT capabilities
 
 ### 🎮 How to Play with Blockchain Features:
 
