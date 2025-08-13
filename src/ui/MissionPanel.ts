@@ -1,5 +1,5 @@
 import Game from "../core/Game";
-import { Mission, PlayerIdentity } from "../core/HoneycombService";
+import { Mission, PlayerIdentity, Resource } from "../core/HoneycombService";
 import Logger from "../tools/Logger";
 
 export default class MissionPanel {
@@ -20,8 +20,8 @@ export default class MissionPanel {
       position: fixed;
       top: 20px;
       right: 20px;
-      width: 320px;
-      max-height: 500px;
+      width: 350px;
+      max-height: 600px;
       background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 50, 0.95));
       color: #ffffff;
       border: 2px solid #4a90e2;
@@ -88,9 +88,10 @@ export default class MissionPanel {
           <span style="font-size: 16px; margin-right: 8px;">✅</span>
           <strong style="color: #4caf50;">Connected</strong>
         </div>
-                 <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Wallet: ${playerIdentity.publicKey.toString().slice(0, 8)}...</div>
-         <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Network: <span style="color: #ff9800;">Devnet</span></div>
-         <div style="font-size: 11px; color: #b0b0b0;">Level: ${playerIdentity.level} | XP: ${playerIdentity.experience}</div>
+        <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Wallet: ${playerIdentity.publicKey.toString().slice(0, 8)}...</div>
+        <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Network: <span style="color: #ff9800;">Devnet</span></div>
+        <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Level: ${playerIdentity.level} | XP: ${playerIdentity.experience}</div>
+        <div style="font-size: 11px; color: #b0b0b0;">Character ID: ${playerIdentity.characterId || 'Not Created'}</div>
       </div>`;
     } else {
       html += `<div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.3), rgba(244, 67, 54, 0.1)); border: 1px solid rgba(244, 67, 54, 0.5); border-radius: 8px; box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);">
@@ -98,8 +99,36 @@ export default class MissionPanel {
           <span style="font-size: 16px; margin-right: 8px;">❌</span>
           <strong style="color: #f44336;">Not Connected</strong>
         </div>
-                 <div style="font-size: 11px; color: #b0b0b0;">Connect wallet to start building and earning XP</div>
+        <div style="font-size: 11px; color: #b0b0b0;">Connect wallet to start building and earning XP</div>
       </div>`;
+    }
+
+    // Nectar Balance
+    if (playerIdentity) {
+      html += `<div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.3), rgba(255, 193, 7, 0.1)); border: 1px solid rgba(255, 193, 7, 0.5); border-radius: 8px; box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center;">
+            <span style="font-size: 16px; margin-right: 8px;">🍯</span>
+            <strong style="color: #ffc107;">Nectar Balance</strong>
+          </div>
+          <span style="color: #ffc107; font-weight: bold; font-size: 16px;">${playerIdentity.nectarBalance}</span>
+        </div>
+        <div style="font-size: 11px; color: #b0b0b0; margin-top: 4px;">Honeycomb's native currency</div>
+      </div>`;
+    }
+
+    // Resources
+    if (playerIdentity && playerIdentity.resources.length > 0) {
+      html += '<div style="margin-bottom: 20px;">';
+      html += '<h4 style="margin: 0 0 12px 0; color: #9c27b0; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">💎 Resources</h4>';
+      playerIdentity.resources.forEach(resource => {
+        const rarityColor = this.getRarityColor(resource.rarity);
+        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 6px 10px; background: rgba(156, 39, 176, 0.1); border: 1px solid ${rarityColor}; border-radius: 6px;">
+          <span style="color: ${rarityColor}; font-weight: 500;">${resource.name}</span>
+          <span style="color: #ffffff; font-weight: bold; background: rgba(156, 39, 176, 0.2); padding: 2px 8px; border-radius: 4px; min-width: 20px; text-align: center;">${resource.amount}</span>
+        </div>`;
+      });
+      html += '</div>';
     }
 
     // Player Traits
@@ -115,9 +144,9 @@ export default class MissionPanel {
       html += '</div>';
     }
 
-        // Active Missions
+    // Active Missions
     html += '<div style="margin-bottom: 20px;">';
-         html += '<h4 style="margin: 0 0 12px 0; color: #4a90e2; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🏗️ Building Missions</h4>';
+    html += '<h4 style="margin: 0 0 12px 0; color: #4a90e2; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🏗️ Building Missions</h4>';
 
     if (missions.length === 0) {
       html += '<div style="color: #888; font-style: italic; text-align: center; padding: 20px;">No active missions</div>';
@@ -128,10 +157,10 @@ export default class MissionPanel {
         const borderColor = mission.completed ? '#4caf50' : '#4a90e2';
 
         html += `<div style="margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05)); border: 1px solid ${borderColor}; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-             <span style="font-size: 14px; margin-right: 8px;">${mission.completed ? '✅' : '🏗️'}</span>
-             <div style="font-weight: bold; color: #ffffff; font-size: 13px;">${mission.title}</div>
-           </div>
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 14px; margin-right: 8px;">${mission.completed ? '✅' : '🏗️'}</span>
+            <div style="font-weight: bold; color: #ffffff; font-size: 13px;">${mission.title}</div>
+          </div>
           <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 10px; line-height: 1.4;">${mission.description}</div>
           <div style="margin-bottom: 8px;">
             <div style="background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
@@ -142,6 +171,7 @@ export default class MissionPanel {
             <span style="color: #888;">Progress: ${progressPercent}%</span>
             <span style="color: ${progressColor}; font-weight: bold;">${mission.completed ? 'COMPLETED!' : 'In Progress'}</span>
           </div>
+          ${this.generateMissionRewards(mission)}
         </div>`;
       });
     }
@@ -161,6 +191,69 @@ export default class MissionPanel {
     }, 0);
 
     return html;
+  }
+
+  private generateMissionRewards(mission: Mission): string {
+    if (mission.rewards.length === 0) return '';
+
+    let rewardsHtml = '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">';
+    rewardsHtml += '<div style="font-size: 10px; color: #888; margin-bottom: 4px;">Rewards:</div>';
+
+    mission.rewards.forEach(reward => {
+      const rewardIcon = this.getRewardIcon(reward.type);
+      const rewardColor = this.getRewardColor(reward.type);
+      const rewardText = this.getRewardText(reward);
+
+      rewardsHtml += `<span style="display: inline-block; margin-right: 8px; padding: 2px 6px; background: rgba(${rewardColor}, 0.2); border: 1px solid rgba(${rewardColor}, 0.5); border-radius: 4px; font-size: 10px; color: rgb(${rewardColor});">
+        ${rewardIcon} ${rewardText}
+      </span>`;
+    });
+
+    rewardsHtml += '</div>';
+    return rewardsHtml;
+  }
+
+  private getRewardIcon(type: string): string {
+    switch (type) {
+      case 'xp': return '⭐';
+      case 'trait': return '⚡';
+      case 'nectar': return '🍯';
+      case 'resource': return '💎';
+      case 'achievement': return '🏆';
+      default: return '🎁';
+    }
+  }
+
+  private getRewardColor(type: string): string {
+    switch (type) {
+      case 'xp': return '255, 193, 7';
+      case 'trait': return '255, 215, 0';
+      case 'nectar': return '255, 193, 7';
+      case 'resource': return '156, 39, 176';
+      case 'achievement': return '76, 175, 80';
+      default: return '74, 144, 226';
+    }
+  }
+
+  private getRewardText(reward: any): string {
+    switch (reward.type) {
+      case 'xp': return `${reward.value} XP`;
+      case 'trait': return `${reward.value}`;
+      case 'nectar': return `${reward.value} Nectar`;
+      case 'resource': return `${reward.value}`;
+      case 'achievement': return 'Achievement';
+      default: return reward.value;
+    }
+  }
+
+  private getRarityColor(rarity: string): string {
+    switch (rarity) {
+      case 'common': return 'rgba(255, 255, 255, 0.5)';
+      case 'rare': return 'rgba(74, 144, 226, 0.8)';
+      case 'epic': return 'rgba(156, 39, 176, 0.8)';
+      case 'legendary': return 'rgba(255, 193, 7, 0.8)';
+      default: return 'rgba(255, 255, 255, 0.5)';
+    }
   }
 
   private addEventListeners(): void {
