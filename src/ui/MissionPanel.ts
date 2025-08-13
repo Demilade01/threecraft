@@ -148,6 +148,29 @@ export default class MissionPanel {
     html += '<div style="margin-bottom: 20px;">';
     html += '<h4 style="margin: 0 0 12px 0; color: #4a90e2; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🏗️ Building Missions</h4>';
 
+    // Add completion progress indicator
+    const completionStats = this.honeycombService.getCompletionStats();
+    if (completionStats.total > 0) {
+      const isAllCompleted = this.honeycombService.areAllMissionsCompleted();
+      const progressColor = isAllCompleted ? '#4caf50' : '#ff9800';
+      const progressText = isAllCompleted ? '🎉 ALL COMPLETED!' : `${completionStats.completed}/${completionStats.total}`;
+
+      html += `<div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05)); border: 1px solid ${progressColor}; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="color: ${progressColor}; font-weight: bold; font-size: 14px;">
+            ${isAllCompleted ? '🏆 Mission Progress' : '📊 Mission Progress'}
+          </span>
+          <span style="color: ${progressColor}; font-weight: bold; font-size: 16px;">${progressText}</span>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="background: linear-gradient(90deg, ${progressColor}, ${progressColor}dd); height: 100%; width: ${completionStats.percentage}%; transition: width 0.3s ease; box-shadow: 0 0 6px ${progressColor}40;"></div>
+        </div>
+        <div style="text-align: center; margin-top: 6px; font-size: 11px; color: #888;">
+          ${completionStats.percentage}% Complete
+        </div>
+      </div>`;
+    }
+
     if (missions.length === 0) {
       html += '<div style="color: #888; font-style: italic; text-align: center; padding: 20px;">No active missions</div>';
     } else {
