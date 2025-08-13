@@ -84,4 +84,8 @@ export default class Game {
   getHoneycombService() {
     return this.honeycombService;
   }
+
+  getUI() {
+    return this.scene.getUI();
+  }
 }

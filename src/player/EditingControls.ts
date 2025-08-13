@@ -74,6 +74,15 @@ export default class EditingControls {
         const honeycombService = Game.instance().getHoneycombService();
         honeycombService.trackBlockBreak(erasedBlock.name.toUpperCase());
 
+        // Update mission panel if visible
+        const ui = Game.instance().getUI();
+        if (ui) {
+          const missionPanel = ui.getMissionPanel();
+          if (missionPanel) {
+            missionPanel.refresh();
+          }
+        }
+
         // if it drops something, add it to the inventory
         if (erasedBlock.drop) {
           this.inventory.addItem({
@@ -101,6 +110,15 @@ export default class EditingControls {
           // Track block placing for Honeycomb
           const honeycombService = Game.instance().getHoneycombService();
           honeycombService.trackBlockPlace(blockData.name.toUpperCase());
+
+          // Update mission panel if visible
+          const ui = Game.instance().getUI();
+          if (ui) {
+            const missionPanel = ui.getMissionPanel();
+            if (missionPanel) {
+              missionPanel.refresh();
+            }
+          }
 
           // decrement item amount
           this.inventory.decrementSelectedItemAmount();

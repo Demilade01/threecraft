@@ -171,4 +171,8 @@ export default class UI {
       this.missionPanel.toggle();
     }
   }
+
+  getMissionPanel(): MissionPanel {
+    return this.missionPanel;
+  }
 }

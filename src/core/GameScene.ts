@@ -220,4 +220,8 @@ export default class GameScene extends Scene {
   getCamera() {
     return this.camera;
   }
+
+  getUI() {
+    return this.ui;
+  }
 }

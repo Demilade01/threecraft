@@ -66,6 +66,8 @@ export default class MissionPanel {
     const activeMissions = this.honeycombService.getActiveMissions();
     const isConnected = this.honeycombService.isWalletConnected();
 
+    console.log(`📊 Mission Panel Update - Connected: ${isConnected}, Missions: ${activeMissions.length}, Level: ${playerIdentity?.level || 0}, XP: ${playerIdentity?.experience || 0}`);
+
     this.container.innerHTML = this.generateHTML(playerIdentity, activeMissions, isConnected);
   }
 

@@ -391,6 +391,8 @@ export default class HoneycombService {
     const currentCount = this.actionCounts.get(`place_${blockType}`) || 0;
     this.actionCounts.set(`place_${blockType}`, currentCount + 1);
 
+    console.log(`🏗️ Block placed: ${blockType} (Total: ${currentCount + 1})`);
+
     this.updateMissionProgress('block_place', blockType);
 
     Logger.debug(`Block placed: ${blockType}`, Logger.PLAYER_KEY);
@@ -405,6 +407,8 @@ export default class HoneycombService {
             (requirement.target === target || requirement.target === 'any')) {
           requirement.current++;
 
+          console.log(`🎯 Mission progress: ${mission.title} - ${requirement.current}/${requirement.amount}`);
+
           // Update mission progress
           const totalRequired = mission.requirements.reduce((sum, req) => sum + req.amount, 0);
           const totalCurrent = mission.requirements.reduce((sum, req) => sum + req.current, 0);
@@ -412,6 +416,7 @@ export default class HoneycombService {
 
           // Check if mission is completed
           if (mission.progress >= 1 && !mission.completed) {
+            console.log(`🎉 Mission completed: ${mission.title}!`);
             this.completeMission(missionId);
           }
         }
@@ -435,6 +440,7 @@ export default class HoneycombService {
       }
     });
 
+    console.log(`🏆 Mission completed: ${mission.title} - XP gained: ${mission.rewards.find(r => r.type === 'xp')?.value || 0}`);
     Logger.info(`Mission completed: ${mission.title}`, Logger.PLAYER_KEY);
 
     // Save to Honeycomb
