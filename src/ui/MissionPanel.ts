@@ -77,7 +77,7 @@ export default class MissionPanel {
     let html = '<div style="margin-bottom: 15px;">';
 
     // Header
-    html += '<h3 style="margin: 0 0 15px 0; color: #4a90e2; font-size: 18px; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">🎮 ThreeCraft Missions</h3>';
+    html += '<h3 style="margin: 0 0 15px 0; color: #4a90e2; font-size: 18px; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); border-bottom: 2px solid #4a90e2; padding-bottom: 10px;">🏗️ ThreeCraft Builder Missions</h3>';
 
     // Connection Status
     if (isConnected && playerIdentity) {
@@ -86,8 +86,9 @@ export default class MissionPanel {
           <span style="font-size: 16px; margin-right: 8px;">✅</span>
           <strong style="color: #4caf50;">Connected</strong>
         </div>
-        <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Wallet: ${playerIdentity.publicKey.toString().slice(0, 8)}...</div>
-        <div style="font-size: 11px; color: #b0b0b0;">Level: ${playerIdentity.level} | XP: ${playerIdentity.experience}</div>
+                 <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Wallet: ${playerIdentity.publicKey.toString().slice(0, 8)}...</div>
+         <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 4px;">Network: <span style="color: #ff9800;">Devnet</span></div>
+         <div style="font-size: 11px; color: #b0b0b0;">Level: ${playerIdentity.level} | XP: ${playerIdentity.experience}</div>
       </div>`;
     } else {
       html += `<div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.3), rgba(244, 67, 54, 0.1)); border: 1px solid rgba(244, 67, 54, 0.5); border-radius: 8px; box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);">
@@ -95,7 +96,7 @@ export default class MissionPanel {
           <span style="font-size: 16px; margin-right: 8px;">❌</span>
           <strong style="color: #f44336;">Not Connected</strong>
         </div>
-        <div style="font-size: 11px; color: #b0b0b0;">Connect wallet to start earning XP</div>
+                 <div style="font-size: 11px; color: #b0b0b0;">Connect wallet to start building and earning XP</div>
       </div>`;
     }
 
@@ -114,7 +115,7 @@ export default class MissionPanel {
 
         // Active Missions
     html += '<div style="margin-bottom: 20px;">';
-    html += '<h4 style="margin: 0 0 12px 0; color: #4a90e2; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎯 Active Missions</h4>';
+         html += '<h4 style="margin: 0 0 12px 0; color: #4a90e2; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🏗️ Building Missions</h4>';
 
     if (missions.length === 0) {
       html += '<div style="color: #888; font-style: italic; text-align: center; padding: 20px;">No active missions</div>';
@@ -125,10 +126,10 @@ export default class MissionPanel {
         const borderColor = mission.completed ? '#4caf50' : '#4a90e2';
 
         html += `<div style="margin-bottom: 12px; padding: 12px; background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(74, 144, 226, 0.05)); border: 1px solid ${borderColor}; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-          <div style="display: flex; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 14px; margin-right: 8px;">${mission.completed ? '✅' : '🎯'}</span>
-            <div style="font-weight: bold; color: #ffffff; font-size: 13px;">${mission.title}</div>
-          </div>
+                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
+             <span style="font-size: 14px; margin-right: 8px;">${mission.completed ? '✅' : '🏗️'}</span>
+             <div style="font-weight: bold; color: #ffffff; font-size: 13px;">${mission.title}</div>
+           </div>
           <div style="font-size: 11px; color: #b0b0b0; margin-bottom: 10px; line-height: 1.4;">${mission.description}</div>
           <div style="margin-bottom: 8px;">
             <div style="background: rgba(0,0,0,0.3); height: 6px; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
@@ -201,24 +202,72 @@ export default class MissionPanel {
 
   private async connectWallet(): Promise<void> {
     try {
-      // For now, we'll create a mock wallet connection
-      // In a real implementation, this would connect to an actual Solana wallet
-      const mockPublicKey = {
-        toString: () => 'MockWallet1234567890abcdef'
-      };
+      // Check if Solana wallet is available
+      if (!window.solana || !window.solana.isPhantom) {
+        // If Phantom is not installed, show instructions
+        this.showWalletInstallInstructions();
+        return;
+      }
 
-      const success = await this.honeycombService.connectWallet(mockPublicKey as any);
+      // Connect to Phantom wallet
+      const response = await window.solana.connect();
+      const publicKey = response.publicKey;
 
-      if (success) {
-        Logger.info('Mock wallet connected successfully', Logger.INIT_KEY);
-        this.updateDisplay();
-      } else {
-        Logger.warn('Failed to connect mock wallet');
+      if (publicKey) {
+        const success = await this.honeycombService.connectWallet(publicKey);
+
+        if (success) {
+          Logger.info(`Real wallet connected: ${publicKey.toString()}`, Logger.INIT_KEY);
+          this.updateDisplay();
+        } else {
+          Logger.warn('Failed to connect wallet');
+        }
       }
     } catch (error) {
       Logger.error(new ErrorEvent('error', { error: error as Error }));
       console.error('Error connecting wallet:', error);
+
+      // Show user-friendly error message
+      this.showConnectionError();
     }
+  }
+
+  private showWalletInstallInstructions(): void {
+    const message = `
+      <div style="text-align: center; padding: 20px;">
+        <h4 style="color: #ff9800; margin-bottom: 15px;">🔗 Wallet Required</h4>
+        <p style="color: #b0b0b0; margin-bottom: 15px; line-height: 1.4;">
+          To play ThreeCraft with blockchain features, you need a Solana wallet.
+        </p>
+        <a href="https://phantom.app/" target="_blank" style="
+          background: linear-gradient(135deg, #4a90e2, #357abd);
+          color: white;
+          text-decoration: none;
+          padding: 10px 20px;
+          border-radius: 6px;
+          display: inline-block;
+          font-weight: 500;
+          box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+        ">Install Phantom Wallet</a>
+      </div>
+    `;
+
+    // Update the panel content to show installation instructions
+    this.container.innerHTML = this.generateHTML(null, [], false) + message;
+  }
+
+  private showConnectionError(): void {
+    const message = `
+      <div style="text-align: center; padding: 20px; color: #f44336;">
+        <h4 style="margin-bottom: 10px;">❌ Connection Failed</h4>
+        <p style="color: #b0b0b0; font-size: 12px;">
+          Please make sure your wallet is unlocked and try again.
+        </p>
+      </div>
+    `;
+
+    // Update the panel content to show error
+    this.container.innerHTML = this.generateHTML(null, [], false) + message;
   }
 
   // Public method to update the display from external calls

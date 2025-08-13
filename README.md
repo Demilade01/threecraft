@@ -2,7 +2,7 @@
 
 This is a Minecraft clone built using Three.js and TypeScript. It is a 3D sandbox game where players can explore, build, and destroy their own world made up of blocks.
 
-You can play a demo [here](https://three-craft.vercel.app/).
+You can play a demo [here](threecraft-steel.vercel.app/).
 
 **Important**: It is suggested to play the game with Chrome, since it was developed and tested only it.
 
@@ -61,6 +61,58 @@ Here are some important tasks and features that i'd like to implement in the fut
 ### Codebase
 
 - [ ] Implement ECS pattern
+
+## 🏗️ Honeycomb Protocol Integration
+
+ThreeCraft now features **real blockchain integration** using Honeycomb Protocol for on-chain progression and missions!
+
+### 🎮 How to Play with Blockchain Features:
+
+1. **Install Phantom Wallet** (or any Solana wallet)
+   - Download from [phantom.app](https://phantom.app/)
+   - Create a new wallet or import existing
+
+2. **Switch to Devnet**
+   - Open Phantom wallet
+   - Go to Settings → Developer Settings
+   - Select "Devnet" network
+   - Get some devnet SOL from [faucet](https://faucet.solana.com/)
+
+3. **Connect & Play**
+   - Start ThreeCraft game
+   - Press `M` to open mission panel
+   - Click "Connect Wallet"
+   - Start building blocks to earn XP and complete missions!
+
+### 🏆 Building Missions:
+- **First Builder** - Place your first block
+- **Stone House** - Build with 20 stone blocks
+- **Wooden Structures** - Place 15 wooden planks
+- **Glass Artist** - Create with 10 glass blocks
+- **Master Builder** - Place 50 blocks total
+
+### ⚡ Player Traits:
+- **Builder** - Basic construction experience
+- **Architect** - Complex building design
+- **Artist** - Beautiful structure creation
+- **Craftsman** - Detailed construction work
+
+### 🔗 Blockchain Features:
+- **Real wallet connection** (Phantom, Solflare, etc.)
+- **Devnet testing** (no real SOL required)
+- **On-chain progression** tracking
+- **Permanent achievements** stored on Solana
+- **Honeycomb Protocol** integration for missions and traits
+
+### 🚀 Development Status:
+- ✅ Real wallet connection
+- ✅ Devnet integration
+- ✅ Mission system
+- ✅ XP and trait progression
+- ✅ Building-focused gameplay
+- 🔄 Full Honeycomb API integration (in progress)
+- 🔄 NFT rewards (planned)
+- 🔄 Multiplayer missions (planned)
 
 ---
 

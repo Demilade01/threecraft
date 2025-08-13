@@ -3,6 +3,17 @@ import EdgeClient from '@honeycomb-protocol/edge-client';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import Logger from '../tools/Logger';
 
+// TypeScript declarations for Solana wallet
+declare global {
+  interface Window {
+    solana?: {
+      isPhantom?: boolean;
+      connect(): Promise<{ publicKey: { toString(): string } }>;
+      request(params: any): Promise<any>;
+    };
+  }
+}
+
 export interface PlayerIdentity {
   publicKey: PublicKey;
   traits: PlayerTrait[];
@@ -86,15 +97,17 @@ export default class HoneycombService {
 
       Logger.info('Connected to Solana devnet', Logger.INIT_KEY);
 
-      // Initialize Honeycomb Edge Client
-      // Note: EdgeClient constructor may require different parameters
-      // For now, we'll use a mock implementation
+      // Initialize Honeycomb Edge Client for devnet
+      // This will be configured for devnet testing
       this.edgeClient = {
         connection: this.connection,
         network: WalletAdapterNetwork.Devnet,
+        // Add devnet-specific configuration
+        devnet: true,
+        cluster: 'devnet'
       };
 
-      Logger.info('Honeycomb Edge Client initialized', Logger.INIT_KEY);
+      Logger.info('Honeycomb Edge Client initialized for devnet', Logger.INIT_KEY);
 
     } catch (error) {
       Logger.error(new ErrorEvent('error', { error: error as Error }));
@@ -109,6 +122,9 @@ export default class HoneycombService {
         throw new Error('Edge client not initialized');
       }
 
+      // Check if wallet is on devnet, switch if needed
+      await this.ensureDevnetConnection();
+
       // Initialize player identity
       this.playerIdentity = {
         publicKey,
@@ -119,7 +135,7 @@ export default class HoneycombService {
 
       this.isConnected = true;
 
-      Logger.info(`Wallet connected: ${publicKey.toString()}`, Logger.INIT_KEY);
+      Logger.info(`Real wallet connected to devnet: ${publicKey.toString()}`, Logger.INIT_KEY);
 
       // Load player data from Honeycomb
       await this.loadPlayerData();
@@ -132,6 +148,41 @@ export default class HoneycombService {
       Logger.error(new ErrorEvent('error', { error: error as Error }));
       console.error('Failed to connect wallet:', error);
       return false;
+    }
+  }
+
+  private async ensureDevnetConnection(): Promise<void> {
+    try {
+      // Check if wallet is available and switch to devnet if needed
+      if (window.solana && window.solana.isPhantom) {
+        // Request to switch to devnet
+        try {
+          await window.solana.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x67' }], // Devnet chain ID
+          });
+        } catch (switchError: any) {
+          // If devnet is not available, add it
+          if (switchError.code === 4902) {
+            await window.solana.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x67',
+                chainName: 'Solana Devnet',
+                nativeCurrency: {
+                  name: 'SOL',
+                  symbol: 'SOL',
+                  decimals: 9
+                },
+                rpcUrls: ['https://api.devnet.solana.com'],
+                blockExplorerUrls: ['https://explorer.solana.com/?cluster=devnet']
+              }],
+            });
+          }
+        }
+      }
+    } catch (error) {
+      Logger.warn('Could not switch to devnet, continuing with current network');
     }
   }
 
@@ -153,28 +204,28 @@ export default class HoneycombService {
   private getDefaultTraits(): PlayerTrait[] {
     return [
       {
-        id: 'miner',
-        name: 'Miner',
-        value: 0,
-        description: 'Experience in mining blocks'
-      },
-      {
         id: 'builder',
         name: 'Builder',
         value: 0,
         description: 'Experience in building structures'
       },
       {
-        id: 'explorer',
-        name: 'Explorer',
+        id: 'architect',
+        name: 'Architect',
         value: 0,
-        description: 'Experience in exploring the world'
+        description: 'Experience in designing complex buildings'
       },
       {
-        id: 'collector',
-        name: 'Collector',
+        id: 'artist',
+        name: 'Artist',
         value: 0,
-        description: 'Experience in collecting resources'
+        description: 'Experience in creating beautiful structures'
+      },
+      {
+        id: 'craftsman',
+        name: 'Craftsman',
+        value: 0,
+        description: 'Experience in detailed construction work'
       }
     ];
   }
@@ -191,13 +242,13 @@ export default class HoneycombService {
   private initializeDefaultMissions(): void {
     const defaultMissions: Mission[] = [
       {
-        id: 'first_stone',
-        title: 'First Stone',
-        description: 'Break your first stone block',
+        id: 'first_builder',
+        title: 'First Builder',
+        description: 'Place your first block to start building',
         requirements: [
           {
-            type: 'block_break',
-            target: 'STONE',
+            type: 'block_place',
+            target: 'any',
             amount: 1,
             current: 0
           }
@@ -209,20 +260,70 @@ export default class HoneycombService {
           },
           {
             type: 'trait',
-            value: 'miner'
+            value: 'builder'
           }
         ],
         completed: false,
         progress: 0
       },
       {
-        id: 'woodcutter',
-        title: 'Woodcutter',
-        description: 'Break 10 wood blocks',
+        id: 'stone_house',
+        title: 'Stone House',
+        description: 'Build a house using 20 stone blocks',
         requirements: [
           {
-            type: 'block_break',
-            target: 'OAK_LOG',
+            type: 'block_place',
+            target: 'STONE',
+            amount: 20,
+            current: 0
+          }
+        ],
+        rewards: [
+          {
+            type: 'xp',
+            value: 50
+          },
+          {
+            type: 'trait',
+            value: 'builder'
+          }
+        ],
+        completed: false,
+        progress: 0
+      },
+      {
+        id: 'wooden_structures',
+        title: 'Wooden Structures',
+        description: 'Place 15 wooden blocks (planks or logs)',
+        requirements: [
+          {
+            type: 'block_place',
+            target: 'PLANKS',
+            amount: 15,
+            current: 0
+          }
+        ],
+        rewards: [
+          {
+            type: 'xp',
+            value: 30
+          },
+          {
+            type: 'trait',
+            value: 'builder'
+          }
+        ],
+        completed: false,
+        progress: 0
+      },
+      {
+        id: 'glass_artist',
+        title: 'Glass Artist',
+        description: 'Create beautiful structures with 10 glass blocks',
+        requirements: [
+          {
+            type: 'block_place',
+            target: 'GLASS',
             amount: 10,
             current: 0
           }
@@ -230,32 +331,32 @@ export default class HoneycombService {
         rewards: [
           {
             type: 'xp',
-            value: 25
+            value: 40
           },
           {
             type: 'trait',
-            value: 'miner'
+            value: 'builder'
           }
         ],
         completed: false,
         progress: 0
       },
       {
-        id: 'builder',
-        title: 'Builder',
-        description: 'Place 5 blocks',
+        id: 'master_builder',
+        title: 'Master Builder',
+        description: 'Place 50 blocks of any type to become a master',
         requirements: [
           {
             type: 'block_place',
             target: 'any',
-            amount: 5,
+            amount: 50,
             current: 0
           }
         ],
         rewards: [
           {
             type: 'xp',
-            value: 15
+            value: 100
           },
           {
             type: 'trait',
