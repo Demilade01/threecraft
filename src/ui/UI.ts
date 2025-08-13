@@ -9,6 +9,7 @@ import CrossHair from "./CrossHair";
 import DebugStats from "./DebugStats";
 import Hotbar from "./Hotbar";
 import Inventory from "./Inventory";
+import MissionPanel from "./MissionPanel";
 import PausedMenu from "./PausedMenu";
 
 export default class UI {
@@ -24,6 +25,7 @@ export default class UI {
   private inventoryPanel!: Inventory;
   private hotbar!: Hotbar;
   private crosshair: CrossHair;
+  private missionPanel: MissionPanel;
 
   // callbacks refs
   private interactionHandlerRef: (evt: KeyboardEvent) => void;
@@ -42,6 +44,7 @@ export default class UI {
 
     this.pausedMenu = new PausedMenu();
     this.debugStats = new DebugStats(player, terrain);
+    this.missionPanel = new MissionPanel();
 
     // callbacks refs
     this.interactionHandlerRef = this.interactionHandler.bind(this);
@@ -105,6 +108,10 @@ export default class UI {
         this.toggleInventory();
         break;
       }
+      case KeyBindings.TOGGLE_MISSION_PANEL_KEY: {
+        this.toggleMissionPanel();
+        break;
+      }
     }
   }
 
@@ -157,5 +164,15 @@ export default class UI {
   private closeInventory() {
     this.player.lockControls();
     this.inventoryPanel.hide();
+  }
+
+  private toggleMissionPanel() {
+    if (this.gameState.getState() === "running") {
+      this.missionPanel.toggle();
+    }
+  }
+
+  getMissionPanel(): MissionPanel {
+    return this.missionPanel;
   }
 }
