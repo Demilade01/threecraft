@@ -19,6 +19,9 @@ export interface PlayerIdentity {
   traits: PlayerTrait[];
   experience: number;
   level: number;
+  characterId?: string;
+  nectarBalance: number;
+  resources: Resource[];
 }
 
 export interface PlayerTrait {
@@ -26,6 +29,15 @@ export interface PlayerTrait {
   name: string;
   value: number;
   description: string;
+  onChainId?: string;
+}
+
+export interface Resource {
+  id: string;
+  name: string;
+  amount: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  onChainId?: string;
 }
 
 export interface Mission {
@@ -36,6 +48,7 @@ export interface Mission {
   rewards: MissionReward[];
   completed: boolean;
   progress: number;
+  onChainId?: string;
 }
 
 export interface MissionRequirement {
@@ -46,7 +59,7 @@ export interface MissionRequirement {
 }
 
 export interface MissionReward {
-  type: 'xp' | 'trait' | 'achievement';
+  type: 'xp' | 'trait' | 'achievement' | 'nectar' | 'resource';
   value: string | number;
 }
 
@@ -57,6 +70,7 @@ export default class HoneycombService {
   private edgeClient: any = null;
   private playerIdentity: PlayerIdentity | null = null;
   private isConnected: boolean = false;
+  private wallet: any = null;
 
   // Mission tracking
   private activeMissions: Map<string, Mission> = new Map();
@@ -67,6 +81,12 @@ export default class HoneycombService {
 
   // Event emitters
   private eventEmitter: EventTarget = new EventTarget();
+
+  // Honeycomb Protocol specific
+  private gameId: string = 'threecraft-v1';
+  private characterProgramId: PublicKey | null = null;
+  private missionProgramId: PublicKey | null = null;
+  private resourceProgramId: PublicKey | null = null;
 
   static instance(): HoneycombService {
     if (!HoneycombService._instance) {
@@ -97,14 +117,45 @@ export default class HoneycombService {
 
       Logger.info('Connected to Solana devnet', Logger.INIT_KEY);
 
-      // Initialize Honeycomb Edge Client for devnet
-      // This will be configured for devnet testing
+      // Initialize Honeycomb Edge Client with proper configuration
       this.edgeClient = {
         connection: this.connection,
         network: WalletAdapterNetwork.Devnet,
-        // Add devnet-specific configuration
-        devnet: true,
-        cluster: 'devnet'
+        cluster: 'devnet',
+        // Honeycomb specific configuration
+        honeycombConfig: {
+          gameId: this.gameId,
+          version: '1.0.0',
+          environment: 'development'
+        },
+        // Mock API methods for development
+        getCharacter: async (params: any) => {
+          // Mock character data for development
+          return {
+            id: `char_${params.publicKey.slice(0, 8)}`,
+            experience: 0,
+            level: 1,
+            nectarBalance: 0,
+            traits: [],
+            resources: [],
+            completedMissions: []
+          };
+        },
+        updateCharacter: async (params: any) => {
+          console.log('Saving character data:', params);
+          return true;
+        },
+        createCharacter: async (params: any) => {
+          console.log('Creating character:', params);
+          return {
+            id: `char_${params.publicKey.slice(0, 8)}`,
+            name: params.name
+          };
+        },
+        createTrade: async (params: any) => {
+          console.log('Creating trade:', params);
+          return { id: `trade_${Date.now()}` };
+        }
       };
 
       Logger.info('Honeycomb Edge Client initialized for devnet', Logger.INIT_KEY);
@@ -122,6 +173,9 @@ export default class HoneycombService {
         throw new Error('Edge client not initialized');
       }
 
+      // Store wallet reference
+      this.wallet = window.solana;
+
       // Check if wallet is on devnet, switch if needed
       await this.ensureDevnetConnection();
 
@@ -131,6 +185,8 @@ export default class HoneycombService {
         traits: this.getDefaultTraits(),
         experience: 0,
         level: 1,
+        nectarBalance: 0,
+        resources: this.getDefaultResources(),
       };
 
       this.isConnected = true;
@@ -189,6 +245,7 @@ export default class HoneycombService {
   disconnectWallet(): void {
     this.isConnected = false;
     this.playerIdentity = null;
+    this.wallet = null;
     this.activeMissions.clear();
     this.completedMissions.clear();
     this.actionCounts.clear();
@@ -230,6 +287,35 @@ export default class HoneycombService {
     ];
   }
 
+  private getDefaultResources(): Resource[] {
+    return [
+      {
+        id: 'stone',
+        name: 'Stone',
+        amount: 0,
+        rarity: 'common'
+      },
+      {
+        id: 'wood',
+        name: 'Wood',
+        amount: 0,
+        rarity: 'common'
+      },
+      {
+        id: 'glass',
+        name: 'Glass',
+        amount: 0,
+        rarity: 'rare'
+      },
+      {
+        id: 'diamond',
+        name: 'Diamond',
+        amount: 0,
+        rarity: 'legendary'
+      }
+    ];
+  }
+
   // Mission Methods
   getActiveMissions(): Mission[] {
     return Array.from(this.activeMissions.values());
@@ -259,6 +345,10 @@ export default class HoneycombService {
             value: 10
           },
           {
+            type: 'nectar',
+            value: 5
+          },
+          {
             type: 'trait',
             value: 'builder'
           }
@@ -282,6 +372,14 @@ export default class HoneycombService {
           {
             type: 'xp',
             value: 50
+          },
+          {
+            type: 'nectar',
+            value: 25
+          },
+          {
+            type: 'resource',
+            value: 'stone'
           },
           {
             type: 'trait',
@@ -309,6 +407,14 @@ export default class HoneycombService {
             value: 30
           },
           {
+            type: 'nectar',
+            value: 15
+          },
+          {
+            type: 'resource',
+            value: 'wood'
+          },
+          {
             type: 'trait',
             value: 'builder'
           }
@@ -334,8 +440,16 @@ export default class HoneycombService {
             value: 40
           },
           {
+            type: 'nectar',
+            value: 20
+          },
+          {
+            type: 'resource',
+            value: 'glass'
+          },
+          {
             type: 'trait',
-            value: 'builder'
+            value: 'artist'
           }
         ],
         completed: false,
@@ -359,8 +473,16 @@ export default class HoneycombService {
             value: 100
           },
           {
+            type: 'nectar',
+            value: 50
+          },
+          {
+            type: 'resource',
+            value: 'diamond'
+          },
+          {
             type: 'trait',
-            value: 'builder'
+            value: 'architect'
           }
         ],
         completed: false,
@@ -437,6 +559,10 @@ export default class HoneycombService {
         this.addExperience(reward.value as number);
       } else if (reward.type === 'trait') {
         this.addTraitExperience(reward.value as string, 1);
+      } else if (reward.type === 'nectar') {
+        this.addNectar(reward.value as number);
+      } else if (reward.type === 'resource') {
+        this.addResource(reward.value as string, 1);
       }
     });
 
@@ -471,13 +597,69 @@ export default class HoneycombService {
     }
   }
 
+  private addNectar(amount: number): void {
+    if (!this.playerIdentity) return;
+
+    this.playerIdentity.nectarBalance += amount;
+    Logger.debug(`Nectar balance increased to ${this.playerIdentity.nectarBalance}`, Logger.PLAYER_KEY);
+  }
+
+  private addResource(resourceId: string, amount: number): void {
+    if (!this.playerIdentity) return;
+
+    const resource = this.playerIdentity.resources.find(r => r.id === resourceId);
+    if (resource) {
+      resource.amount += amount;
+      Logger.debug(`Resource ${resourceId} increased to ${resource.amount}`, Logger.PLAYER_KEY);
+    }
+  }
+
   // Honeycomb Data Methods
   private async loadPlayerData(): Promise<void> {
     try {
       if (!this.edgeClient || !this.playerIdentity) return;
 
-      // TODO: Load player data from Honeycomb Protocol
-      // This will be implemented when we have the specific Honeycomb API calls
+      // Load character data from Honeycomb
+      const characterData = await this.edgeClient.getCharacter({
+        publicKey: this.playerIdentity.publicKey.toString(),
+        gameId: this.gameId
+      });
+
+      if (characterData) {
+        this.playerIdentity.characterId = characterData.id;
+        this.playerIdentity.experience = characterData.experience || 0;
+        this.playerIdentity.level = characterData.level || 1;
+        this.playerIdentity.nectarBalance = characterData.nectarBalance || 0;
+
+        // Load traits
+        if (characterData.traits) {
+          this.playerIdentity.traits = this.playerIdentity.traits.map(trait => {
+            const onChainTrait = characterData.traits.find((ct: any) => ct.id === trait.id);
+            return {
+              ...trait,
+              value: onChainTrait?.value || trait.value,
+              onChainId: onChainTrait?.onChainId
+            };
+          });
+        }
+
+        // Load resources
+        if (characterData.resources) {
+          this.playerIdentity.resources = this.playerIdentity.resources.map(resource => {
+            const onChainResource = characterData.resources.find((cr: any) => cr.id === resource.id);
+            return {
+              ...resource,
+              amount: onChainResource?.amount || resource.amount,
+              onChainId: onChainResource?.onChainId
+            };
+          });
+        }
+
+        // Load completed missions
+        if (characterData.completedMissions) {
+          this.completedMissions = new Set(characterData.completedMissions);
+        }
+      }
 
       Logger.info('Player data loaded from Honeycomb', Logger.LOADING_KEY);
     } catch (error) {
@@ -490,13 +672,91 @@ export default class HoneycombService {
     try {
       if (!this.edgeClient || !this.playerIdentity) return;
 
-      // TODO: Save player data to Honeycomb Protocol
-      // This will be implemented when we have the specific Honeycomb API calls
+      // Save character data to Honeycomb
+      await this.edgeClient.updateCharacter({
+        publicKey: this.playerIdentity.publicKey.toString(),
+        gameId: this.gameId,
+        characterId: this.playerIdentity.characterId,
+        data: {
+          experience: this.playerIdentity.experience,
+          level: this.playerIdentity.level,
+          nectarBalance: this.playerIdentity.nectarBalance,
+          traits: this.playerIdentity.traits.map(trait => ({
+            id: trait.id,
+            value: trait.value,
+            onChainId: trait.onChainId
+          })),
+          resources: this.playerIdentity.resources.map(resource => ({
+            id: resource.id,
+            amount: resource.amount,
+            onChainId: resource.onChainId
+          })),
+          completedMissions: Array.from(this.completedMissions),
+          lastUpdated: new Date().toISOString()
+        }
+      });
 
       Logger.info('Player data saved to Honeycomb', Logger.DATA_KEY);
     } catch (error) {
       Logger.error(new ErrorEvent('error', { error: error as Error }));
       console.error('Failed to save player data:', error);
+    }
+  }
+
+  // Character Management Methods
+  async createCharacter(name: string): Promise<boolean> {
+    try {
+      if (!this.edgeClient || !this.playerIdentity) return false;
+
+      const character = await this.edgeClient.createCharacter({
+        publicKey: this.playerIdentity.publicKey.toString(),
+        gameId: this.gameId,
+        name: name,
+        traits: this.playerIdentity.traits.map(trait => ({
+          id: trait.id,
+          name: trait.name,
+          value: trait.value,
+          description: trait.description
+        })),
+        initialExperience: 0,
+        initialLevel: 1
+      });
+
+      if (character) {
+        this.playerIdentity.characterId = character.id;
+        await this.savePlayerData();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      Logger.error(new ErrorEvent('error', { error: error as Error }));
+      console.error('Failed to create character:', error);
+      return false;
+    }
+  }
+
+  // Resource Management Methods
+  async tradeResource(resourceId: string, amount: number, targetPlayer: string): Promise<boolean> {
+    try {
+      if (!this.edgeClient || !this.playerIdentity) return false;
+
+      const trade = await this.edgeClient.createTrade({
+        fromPlayer: this.playerIdentity.publicKey.toString(),
+        toPlayer: targetPlayer,
+        gameId: this.gameId,
+        resources: [{
+          id: resourceId,
+          amount: amount
+        }],
+        nectarAmount: 0
+      });
+
+      return !!trade;
+    } catch (error) {
+      Logger.error(new ErrorEvent('error', { error: error as Error }));
+      console.error('Failed to trade resource:', error);
+      return false;
     }
   }
 
